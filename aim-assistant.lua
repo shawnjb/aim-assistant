@@ -50,8 +50,6 @@ local sens = 0.2
 local aimbot = true
 
 local v2 = Vector2.new
-local v3 = Vector3.new
-local c3 = Color3.new
 local c3u = Color3.fromRGB
 
 local rbxclass = game.IsA
@@ -187,7 +185,7 @@ connect(rbxchildwait(ui_sencontroller, 'TextBox').FocusLost, function(enter_pres
 end)
 
 local function can_track(player, character)
-    if typeof(player) == 'Instance' and player:IsA("Model") then
+    if typeof(player) == 'Instance' and rbxclass(player, "Model") then
         character = player
         player = players:GetPlayerFromCharacter(character)
     end
@@ -288,7 +286,7 @@ local function get_nearest_character(current_target)
             end
         end
         local head = rbxchild(character, 'Head')
-        if typeof(head) == 'Instance' and head:IsA('BasePart') then
+        if typeof(head) == 'Instance' and rbxclass(head, 'BasePart') then
             local screen_position, on_screen = currentcamera:WorldToScreenPoint(head.Position)
             local screen_distance = (v2(playermouse.X, playermouse.Y) - v2(screen_position.X, screen_position.Y))
             .Magnitude
