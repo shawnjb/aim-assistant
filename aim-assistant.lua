@@ -289,7 +289,7 @@ local function get_nearest_character(current_target)
         if typeof(head) == 'Instance' and rbxclass(head, 'BasePart') then
             local screen_position, on_screen = currentcamera:WorldToScreenPoint(head.Position)
             local screen_distance = (v2(playermouse.X, playermouse.Y) - v2(screen_position.X, screen_position.Y))
-            .Magnitude
+                .Magnitude
             if on_screen then
                 local_entry:enabled(can_track(local_entry.player))
                 local hit = raycast(
@@ -337,6 +337,28 @@ connect(inputended, function(input)
         mousebutton2down = false
     end
 end)
+
+if syn and game.PlaceId == 292439477 then
+    syn.run_on_actor(getactors()[1], [==[
+        local entryTable
+        for _, object in pairs(getgc(false)) do
+            local source, name = debug.info(object, "sn");
+            local script = string.match(source, "%w+$");
+            if name == "getEntry" and script == "ReplicationInterface" then entryTable = debug.getupvalue(object, 1); end
+            if entryTable then break; end
+        end
+        assert(entryTable, "Failed to find entry table")
+        game:GetService("RunService").Stepped:Connect(function()
+            for player, entry in pairs(entryTable) do
+                pcall(function()
+                    local tpObject = entry and entry._thirdPersonObject;
+                    local character = tpObject and tpObject._character;
+                    player.Character = character;
+                end)
+            end
+        end)
+    ]==])
+end
 
 local function load_player(player)
     if player ~= localplayer then
