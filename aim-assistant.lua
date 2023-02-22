@@ -126,20 +126,22 @@ local inputchanged = userinputservice.InputChanged
 local inputendstate = Enum.UserInputState.End
 local inputbeginstate = Enum.UserInputState.Begin
 
-spawn(function(dragging, dragInput, dragStart, startPos)
+spawn(function()
+    local dragging
+    local draginput
+    local dragstart
+    local startpos
+
     local function update(input)
-        local delta = input.Position - dragStart
-        ui_frame.Position =
-            UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        local delta = input.Position - dragstart
+        ui_frame.Position = UDim2.new(startpos.X.Scale, startpos.X.Offset + delta.X, startpos.Y.Scale, startpos.Y.Offset + delta.Y)
     end
 
-    connect(ui_frame.InputBegan, function(input)
-        if input.UserInputType == mousebutton1
-            or input.UserInputType == touch
-        then
+    connect(ui_topbar.InputBegan, function(input)
+        if input.UserInputType == mousebutton1 or input.UserInputType == touch then
             dragging = true
-            dragStart = input.Position
-            startPos = ui_frame.Position
+            dragstart = input.Position
+            startpos = ui_frame.Position
 
             connect(input.Changed, function()
                 if input.UserInputState == inputendstate then
@@ -148,16 +150,22 @@ spawn(function(dragging, dragInput, dragStart, startPos)
             end)
         end
     end)
-    connect(ui_frame.InputChanged, function(input)
-        if input.UserInputType == mousemovement
-            or input.UserInputType == touch
-        then
-            dragInput = input
+
+    connect(ui_topbar.InputChanged, function(input)
+        if input.UserInputType == mousemovement then
+            draginput = input
         end
     end)
-    connect(uis.InputChanged, function(input)
-        if input == dragInput and dragging then
+
+    connect(ui_frame.InputChanged, function(input)
+        if input == draginput and dragging then
             update(input)
+        end
+    end)
+
+    connect(ui_topbar.InputEnded, function(input)
+        if input.UserInputType == mousebutton1 or input.UserInputType == touch then
+            dragging = false
         end
     end)
 end)
@@ -338,27 +346,43 @@ connect(inputended, function(input)
     end
 end)
 
-if syn and game.PlaceId == 292439477 then
-    syn.run_on_actor(getactors()[1], [==[
-        local entryTable
-        for _, object in pairs(getgc(false)) do
-            local source, name = debug.info(object, "sn");
-            local script = string.match(source, "%w+$");
-            if name == "getEntry" and script == "ReplicationInterface" then entryTable = debug.getupvalue(object, 1); end
-            if entryTable then break; end
+coroutine.resume(coroutine.create(function()
+    if game.PlaceId == 292439477 then
+        pcall(syn.run_on_actor, getactors()[1], "local t;for _,o in pairs(getgc(false))do local s,n=debug.info(o,\"sn\");local sc=string.match(s,\"%w+$\");if n==\"getEntry\"and sc==\"ReplicationInterface\"then t=debug.getupvalue(o,1)end;if t then break end end;assert(t,\"Failed to find entry table\")game:GetService(\"RunService\").Stepped:Connect(function()for p,e in pairs(t)do pcall(function()local t=e and e._thirdPersonObject;local c=t and t._character;p.Character=c end)end end)")
+    end
+end))
+
+coroutine.resume(coroutine.create(function(dragging, drag_input, drag_start, start_position)
+    local function update(input)
+        local delta = input.Position - drag_start
+        ui_frame.Position = UDim2.new(start_position.X.Scale, start_position.X.Offset + delta.X, start_position.Y.Scale, start_position.Y.Offset + delta.Y)
+    end
+    connect(ui_frame.InputBegan, function(input)
+        if input.UserInputType == mousebutton1 or input.UserInputType == touch then
+            dragging, drag_start, start_position = true, input.Position, ui_frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == ended then
+                    dragging = false
+                end
+            end)
         end
-        assert(entryTable, "Failed to find entry table")
-        game:GetService("RunService").Stepped:Connect(function()
-            for player, entry in pairs(entryTable) do
-                pcall(function()
-                    local tpObject = entry and entry._thirdPersonObject;
-                    local character = tpObject and tpObject._character;
-                    player.Character = character;
-                end)
-            end
-        end)
-    ]==])
-end
+    end)
+    connect(ui_frame.InputChanged, function(input)
+        if input.UserInputType == mousemovement or input.UserInputType == touch then
+            drag_input = input
+        end
+    end)
+    connect(userinputservice.InputChanged, function(input)
+        if input == drag_input and dragging then
+            update(input)
+        end
+    end)
+    connect(ui_frame.InputEnded, function(input)
+        if input.UserInputType == mousebutton1 or input.UserInputType == touch then
+            dragging = false
+        end
+    end)
+end))
 
 local function load_player(player)
     if player ~= localplayer then
