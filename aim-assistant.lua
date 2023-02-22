@@ -193,6 +193,9 @@ connect(rbxchildwait(ui_sencontroller, 'TextBox').FocusLost, function(enter_pres
 end)
 
 local function can_track(player, character)
+    if not esp then
+        return false
+    end
     if typeof(player) == 'Instance' and rbxclass(player, "Model") then
         character = player
         player = players:GetPlayerFromCharacter(character)
@@ -441,7 +444,7 @@ end)
 
 connect(rbxchildwait(ui_espcontroller, 'ImageButton').MouseButton1Up, function()
     esp = not esp
-    ui_espcontroller.ImageButton.TextLabel.Text = ffa and '✓' or ''
+    ui_espcontroller.ImageButton.TextLabel.Text = esp and '✓' or ''
     for _, entry in pairs(content) do
         entry:enabled(can_track(entry.player))
     end
