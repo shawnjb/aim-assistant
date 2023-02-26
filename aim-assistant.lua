@@ -1,16 +1,36 @@
----@diagnostic disable: undefined-global
+---@diagnostic disable: undefined-global, need-check-nil
 
 local env = getgenv()
 
+--- Closes an existing aim assistant instance. This function may not be available if the script has not been loaded previously.
+--- @type function
+local stop_aim_assistant = rawget(env, 'stop_aim_assistant')
+
+if type(stop_aim_assistant) == 'function' then
+    pcall(stop_aim_assistant)
+end
+
 assert(type(env) == 'table', 'aim-assistant.lua: failed to get environment')
-pcall(function() env.stop_aim_assistant() end)
+
+--- Returns the Roblox type of the given value.
+--- @type function
+local typeof = rawget(env, 'typeof')
+
+--- Appends a new value to the given table.
+--- @type function
+local insert = rawget(table, 'insert')
+
+--- Environment assertion.
+assert(type(typeof) == 'function', 'aim-assistant.lua: failed to get typeof')
+assert(type(insert) == 'function', 'aim-assistant.lua: failed to get insert')
+assert(_VERSION == 'Luau', 'aim-assistant.lua: failed to get _VERSION')
 
 local instances = {}
 local connections = {}
 
 local function connect(signal, callback)
     local connection = signal:Connect(callback)
-    table.insert(connections, connection)
+    insert(connections, connection)
     return connection
 end
 
@@ -19,29 +39,36 @@ local instance = env.Instance
 local Instance = {
     new = function(class, parent)
         local instance = instance.new(class, parent)
-        table.insert(instances, instance)
+        insert(instances, instance)
         return instance
     end
 }
 
-local players = game:GetService("Players")
+local datamod = rawget(env, 'game')
+local getserv = assert(typeof(datamod) == 'Instance' and datamod.GetService, 'aim-assistant.lua: failed to get game.GetService')
+local sercach = {}
+local fromser = function(self, i)
+    local service = sercach[i]
+    if not service then
+        service = getserv(datamod, i)
+        sercach[i] = service
+    end
+    return service
+end
+local service = setmetatable({}, { __index = fromser, __call = fromser })
+
+local players = service("Players")
 local got_ui, ui_source = pcall(function()
     return game:GetObjects("rbxassetid://11738969913")
 end)
 
 assert(got_ui, 'aim-assistant.lua: failed to get ui')
 
-local coregui
-if type(gethui) == 'function' then
-    coregui = gethui()
-else
-    coregui = game:GetService("CoreGui")
-end
-
+local coregui = type(gethui) == 'function' and gethui() or service("CoreGui")
 local ui = ui_source[1]
 ui.Enabled = true
 ui.Parent = coregui
-table.insert(instances, ui)
+insert(instances, ui)
 
 local esp = true
 local ffa = true
@@ -119,7 +146,7 @@ local mousemovement = Enum.UserInputType.MouseMovement
 local mousebutton1down = false
 local mousebutton2down = false
 
-local userinputservice = game:GetService("UserInputService")
+local userinputservice = service("UserInputService")
 local inputbegan = userinputservice.InputBegan
 local inputended = userinputservice.InputEnded
 local inputchanged = userinputservice.InputChanged
@@ -134,7 +161,8 @@ spawn(function()
 
     local function update(input)
         local delta = input.Position - dragstart
-        ui_frame.Position = UDim2.new(startpos.X.Scale, startpos.X.Offset + delta.X, startpos.Y.Scale, startpos.Y.Offset + delta.Y)
+        ui_frame.Position = UDim2.new(startpos.X.Scale, startpos.X.Offset + delta.X, startpos.Y.Scale,
+            startpos.Y.Offset + delta.Y)
     end
 
     connect(ui_topbar.InputBegan, function(input)
@@ -264,7 +292,7 @@ local function get_enemy_players()
             end
             local_entry:enabled(can_track(local_entry.player))
             if (ffa or potential_enemy.Team ~= localplayer.Team) then
-                table.insert(enemy_players, potential_enemy)
+                insert(enemy_players, potential_enemy)
             end
         end
     end
@@ -277,7 +305,7 @@ local function get_enemy_characters()
         local enemy_character = enemy_player.Character
         local enemy_humanoid = typeof(enemy_character) == 'Instance' and rbxclasschild(enemy_character, 'Humanoid')
         if (enemy_humanoid and enemy_humanoid.Health > 0) or not enemy_humanoid then
-            table.insert(enemy_characters, enemy_character)
+            insert(enemy_characters, enemy_character)
         end
     end
     return enemy_characters
@@ -351,14 +379,16 @@ end)
 
 coroutine.resume(coroutine.create(function()
     if game.PlaceId == 292439477 then
-        pcall(syn.run_on_actor, getactors()[1], "local t;for _,o in pairs(getgc(false))do local s,n=debug.info(o,\"sn\");local sc=string.match(s,\"%w+$\");if n==\"getEntry\"and sc==\"ReplicationInterface\"then t=debug.getupvalue(o,1)end;if t then break end end;assert(t,\"Failed to find entry table\")game:GetService(\"RunService\").Stepped:Connect(function()for p,e in pairs(t)do pcall(function()local t=e and e._thirdPersonObject;local c=t and t._character;p.Character=c end)end end)")
+        pcall(syn.run_on_actor, getactors()[1],
+            "local t;for _,o in pairs(getgc(false))do local s,n=debug.info(o,\"sn\");local sc=string.match(s,\"%w+$\");if n==\"getEntry\"and sc==\"ReplicationInterface\"then t=debug.getupvalue(o,1)end;if t then break end end;assert(t,\"Failed to find entry table\")game:GetService(\"RunService\").Stepped:Connect(function()for p,e in pairs(t)do pcall(function()local t=e and e._thirdPersonObject;local c=t and t._character;p.Character=c end)end end)")
     end
 end))
 
 coroutine.resume(coroutine.create(function(dragging, drag_input, drag_start, start_position)
     local function update(input)
         local delta = input.Position - drag_start
-        ui_frame.Position = UDim2.new(start_position.X.Scale, start_position.X.Offset + delta.X, start_position.Y.Scale, start_position.Y.Offset + delta.Y)
+        ui_frame.Position = UDim2.new(start_position.X.Scale, start_position.X.Offset + delta.X, start_position.Y.Scale,
+            start_position.Y.Offset + delta.Y)
     end
     connect(ui_frame.InputBegan, function(input)
         if input.UserInputType == mousebutton1 or input.UserInputType == touch then
@@ -456,7 +486,7 @@ connect(rbxchildwait(ui_aimcontroller, 'ImageButton').MouseButton1Up, function()
     circle.Visible = aimbot
 end)
 
-connect(game:GetService("RunService").Stepped, function(time, delta_time)
+connect(service("RunService").Stepped, function(time, delta_time)
     current_target = nearest_character
     nearest_character, nearest_screenpoint = get_nearest_character(current_target)
     if aimbot and (mousebutton1down or mousebutton2down) and nearest_character and nearest_screenpoint and
@@ -473,19 +503,19 @@ end)
 
 env.stop_aim_assistant = function()
     for _, connection in pairs(connections) do
-        pcall(function()
-            connection:Disconnect()
-        end)
+        if typeof(connection) == 'RBXScriptConnection' and connection.Connected then
+            pcall(connection.Disconnect, connection)
+        end
     end
     for _, instance in pairs(instances) do
-        pcall(function()
-            instance:Destroy()
-        end)
+        if typeof(instance) == 'Instance' then
+            pcall(instance.Destroy, instance)
+        end
     end
     for _, entry in pairs(content) do
-        pcall(function()
-            entry:destroy()
-        end)
+        if type(entry) == 'table' then
+            pcall(entry.destroy, entry)
+        end
     end
     content = nil
     connections = nil
