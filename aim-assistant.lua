@@ -12,10 +12,6 @@ end
 
 assert(type(env) == 'table', 'aim-assistant.lua: failed to get environment')
 
---- Returns the Roblox type of the given value.
---- @type function
-local typeof = rawget(env, 'typeof')
-
 --- Appends a new value to the given table.
 --- @type function
 local insert = rawget(table, 'insert')
