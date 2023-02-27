@@ -16,8 +16,6 @@ assert(type(env) == 'table', 'aim-assistant.lua: failed to get environment')
 --- @type function
 local insert = rawget(table, 'insert')
 
---- Environment assertion.
-assert(type(typeof) == 'function', 'aim-assistant.lua: failed to get typeof')
 assert(type(insert) == 'function', 'aim-assistant.lua: failed to get insert')
 assert(_VERSION == 'Luau', 'aim-assistant.lua: failed to get _VERSION')
 
@@ -40,13 +38,12 @@ local Instance = {
     end
 }
 
-local datamod = rawget(env, 'game')
-local getserv = assert(typeof(datamod) == 'Instance' and datamod.GetService, 'aim-assistant.lua: failed to get game.GetService')
+local getserv = game.GetService
 local sercach = {}
 local fromser = function(self, i)
     local service = sercach[i]
     if not service then
-        service = getserv(datamod, i)
+        service = getserv(game, i)
         sercach[i] = service
     end
     return service
