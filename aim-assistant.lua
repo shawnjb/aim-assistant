@@ -317,7 +317,7 @@ local function get_nearest_character(current_target)
                 break
             end
         end
-        local head = rbxchild(character, 'Head')
+        local head = rbxchild(character, 'Head') or rbxchild(character, 'HumanoidRootPart')
         if typeof(head) == 'Instance' and rbxclass(head, 'BasePart') then
             local screen_position, on_screen = currentcamera:WorldToScreenPoint(head.Position)
             local screen_distance = (v2(playermouse.X, playermouse.Y) - v2(screen_position.X, screen_position.Y))
@@ -372,8 +372,7 @@ end)
 
 coroutine.resume(coroutine.create(function()
     if game.PlaceId == 292439477 then
-        pcall(syn.run_on_actor, getactors()[1],
-            "local t;for _,o in pairs(getgc(false))do local s,n=debug.info(o,\"sn\");local sc=string.match(s,\"%w+$\");if n==\"getEntry\"and sc==\"ReplicationInterface\"then t=debug.getupvalue(o,1)end;if t then break end end;assert(t,\"Failed to find entry table\")game:GetService(\"RunService\").Stepped:Connect(function()for p,e in pairs(t)do pcall(function()local t=e and e._thirdPersonObject;local c=t and t._character;p.Character=c end)end end)")
+        pcall(syn.run_on_actor, getactors()[1], "local t;for _,o in pairs(getgc(false))do local s,n=debug.info(o,\"sn\");local sc=string.match(s,\"%w+$\");if n==\"getEntry\"and sc==\"ReplicationInterface\"then t=debug.getupvalue(o,1)end;if t then break end end;assert(t,\"Failed to find entry table\")game:GetService(\"RunService\").Stepped:Connect(function()for p,e in pairs(t)do pcall(function()local t=e and e._thirdPersonObject;local c=t and t._character;p.Character=c end)end end)")
     end
 end))
 
